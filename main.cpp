@@ -135,8 +135,10 @@ int main(int argc, char **argv)
 {
 
     std::vector<std::string> class_list = load_class_list();
+    std::cout << argv[0] << std::endl;
 
-    const std::filesystem::path fileDir{"C:/Users/RoboGor/Desktop/trafficSings/images/train"};
+    // const std::filesystem::path fileDir{"C:/Users/RoboGor/Desktop/trafficSings/images/train"};
+    std::filesystem::path fileDir{argv[1]};
     cv::Mat frame;
 
     bool is_cuda = true;
@@ -165,9 +167,9 @@ int main(int argc, char **argv)
         frame_count++;
         total_frames++;
 
-        int detections = output.size();
+        size_t detections = output.size();
 
-        for (int i = 0; i < detections; ++i)
+        for (size_t i = 0; i < detections; ++i)
         {
 
             auto detection = output[i];
