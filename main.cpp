@@ -1,10 +1,12 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
+#include <filesystem>
+#include <string>
 
 std::vector<std::string> load_class_list()
 {
     std::vector<std::string> class_list;
-    std::ifstream ifs("C:/Users/RoboGor/Desktop/objctdet/classes.txt");
+    std::ifstream ifs("C:/Users/RoboGor/Desktop/yolo opencv/classes.txt");
     std::string line;
     while (getline(ifs, line))
     {
@@ -15,7 +17,7 @@ std::vector<std::string> load_class_list()
 
 void load_net(cv::dnn::Net &net, bool is_cuda)
 {
-    auto result = cv::dnn::readNet("C:/Users/RoboGor/Desktop/objctdet/yolov5s.onnx");
+    auto result = cv::dnn::readNet("C:/Users/RoboGor/Desktop/yolo opencv/best.onnx");
     if (is_cuda)
     {
         std::cout << "Attempty to use CUDA\n";
@@ -56,39 +58,46 @@ cv::Mat format_yolov5(const cv::Mat &source) {
 }
 
 void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output, const std::vector<std::string> &className) {
+    
     cv::Mat blob;
 
     auto input_image = format_yolov5(image);
     
     cv::dnn::blobFromImage(input_image, blob, 1./255., cv::Size(INPUT_WIDTH, INPUT_HEIGHT), cv::Scalar(), true, false);
     net.setInput(blob);
+    
     std::vector<cv::Mat> outputs;
     net.forward(outputs, net.getUnconnectedOutLayersNames());
+    
 
     float x_factor = input_image.cols / (float)INPUT_WIDTH;
     float y_factor = input_image.rows / (float)INPUT_HEIGHT;
     
     float *data = (float *)outputs[0].data;
-
-    const int dimensions = 85;
+    std::cout << outputs[0].size() << std::endl;
+    const int dimensions = 25;
     const int rows = 25200;
     
     std::vector<int> class_ids;
     std::vector<float> confidences;
     std::vector<cv::Rect> boxes;
-
+    
     for (int i = 0; i < rows; ++i) {
-
+        // std::cout << i << std::endl;
         float confidence = data[4];
-        if (confidence >= CONFIDENCE_THRESHOLD) {
 
+        if (confidence >= CONFIDENCE_THRESHOLD) {
+            
             float * classes_scores = data + 5;
+            
             cv::Mat scores(1, className.size(), CV_32FC1, classes_scores);
+            
             cv::Point class_id;
             double max_class_score;
             minMaxLoc(scores, 0, &max_class_score, 0, &class_id);
+            
             if (max_class_score > SCORE_THRESHOLD) {
-
+                
                 confidences.push_back(confidence);
 
                 class_ids.push_back(class_id.x);
@@ -103,14 +112,15 @@ void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output, c
                 int height = int(h * y_factor);
                 boxes.push_back(cv::Rect(left, top, width, height));
             }
-
+            
         }
-
-        data += 85;
-
+        
+        data += dimensions;
+        
     }
-
+    
     std::vector<int> nms_result;
+    
     cv::dnn::NMSBoxes(boxes, confidences, SCORE_THRESHOLD, NMS_THRESHOLD, nms_result);
     for (int i = 0; i < nms_result.size(); i++) {
         int idx = nms_result[i];
@@ -127,13 +137,8 @@ int main(int argc, char **argv)
 
     std::vector<std::string> class_list = load_class_list();
 
+    const std::filesystem::path fileDir{"C:/Users/RoboGor/Desktop/trafficSings/images/train"};
     cv::Mat frame;
-    cv::VideoCapture capture("C:/Users/RoboGor/Desktop/objctdet/test.mp4");
-    if (!capture.isOpened())
-    {
-        std::cerr << "Error opening video file\n";
-        return -1;
-    }
 
     bool is_cuda = true;
 
@@ -145,18 +150,19 @@ int main(int argc, char **argv)
     double fps = -1;
     int total_frames = 0;
 
-    while (true)
+    for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator{fileDir})
     {
-        capture.read(frame);
+        frame = cv::imread(file.path().string());
         if (frame.empty())
         {
             std::cout << "End of stream\n";
             break;
         }
-
+        
         std::vector<Detection> output;
+        
         detect(frame, net, output, class_list);
-
+        
         frame_count++;
         total_frames++;
 
@@ -197,9 +203,8 @@ int main(int argc, char **argv)
         }
         cv::imshow("output", frame);
 
-        if (cv::waitKey(1) != -1)
+        if (cv::waitKey(0) == 113)
         {
-            capture.release();
             std::cout << "finished by user\n";
             break;
         }
