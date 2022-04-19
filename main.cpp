@@ -74,8 +74,7 @@ void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output, c
     float y_factor = input_image.rows / (float)INPUT_HEIGHT;
     
     float *data = (float *)outputs[0].data;
-    std::cout << outputs[0].size() << std::endl;
-    const int dimensions = 25;
+    const int dimensions = className.size() + 5;
     const int rows = 25200;
     
     std::vector<int> class_ids;
