@@ -71,7 +71,7 @@ void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output, c
     std::vector<cv::Rect> boxes;
     
     for (int i = 0; i < rows; ++i) {
-        // std::cout << i << std::endl;
+
         float confidence = data[4];
 
         if (confidence >= CONFIDENCE_THRESHOLD) {
@@ -133,7 +133,6 @@ int main()
     cv::dnn::Net net;
     load_net(net, is_cuda);
 
-    auto start = std::chrono::high_resolution_clock::now();
     int frame_count = 0;
     int total_frames = 0;
 
