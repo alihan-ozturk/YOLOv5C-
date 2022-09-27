@@ -135,7 +135,6 @@ int main()
 
     auto start = std::chrono::high_resolution_clock::now();
     int frame_count = 0;
-    double fps = -1;
     int total_frames = 0;
 
     for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator{fileDir})
